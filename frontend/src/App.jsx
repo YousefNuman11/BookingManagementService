@@ -25,17 +25,23 @@ const formatDateTime = (value) =>
     minute: '2-digit',
   }).format(new Date(value))
 
-const formatRange = (startDateTime, endDateTime) => {
+const formatBookingDate = (value) =>
+  new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(value))
+
+const formatBookingTimeRange = (startDateTime, endDateTime) => {
   const start = new Date(startDateTime)
   const end = new Date(endDateTime)
-  const durationMinutes = Math.max(0, Math.round((end - start) / 60000))
-  const hours = Math.floor(durationMinutes / 60)
-  const minutes = durationMinutes % 60
-  const duration = [hours ? `${hours}h` : null, minutes ? `${minutes}m` : null]
-    .filter(Boolean)
-    .join(' ')
 
-  return `${formatDateTime(start)} - ${formatDateTime(end)}${duration ? ` • ${duration}` : ''}`
+  const timeFormatter = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+
+  return `${timeFormatter.format(start)} - ${timeFormatter.format(end)}`
 }
 
 const createDemoBookings = () => [
@@ -477,22 +483,44 @@ function App() {
               <article key={booking.id} className="booking-row">
                 <div className="booking-main">
                   <div className="booking-topline">
-                    <h3>{booking.resourceId}</h3>
+                    <div className="booking-title-group">
+                      <span className="booking-label">Resource</span>
+                      <h3>{booking.resourceId}</h3>
+                    </div>
                     <span className={`status-badge status-${booking.status.toLowerCase()}`}>
                       {booking.status}
                     </span>
                   </div>
-                  <p>{booking.userId}</p>
-                  <p>{formatRange(booking.startDateTime, booking.endDateTime)}</p>
+
+                  <div className="booking-lines">
+                    <div className="booking-line">
+                      <span className="booking-label">Guest</span>
+                      <strong>{booking.userId}</strong>
+                    </div>
+                    <div className="booking-line">
+                      <span className="booking-label">Date</span>
+                      <strong>{formatBookingDate(booking.startDateTime)}</strong>
+                    </div>
+                    <div className="booking-line">
+                      <span className="booking-label">Time</span>
+                      <strong>{formatBookingTimeRange(booking.startDateTime, booking.endDateTime)}</strong>
+                    </div>
+                    <div className="booking-line">
+                      <span className="booking-label">Created</span>
+                      <strong>
+                        {booking.createdAt ? formatDateTime(booking.createdAt) : 'just now'}
+                      </strong>
+                    </div>
+                    {booking.cancelledAt ? (
+                      <div className="booking-line">
+                        <span className="booking-label">Cancelled</span>
+                        <strong>{formatDateTime(booking.cancelledAt)}</strong>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
 
-                <div className="booking-meta">
-                  <span>
-                    Created {booking.createdAt ? formatDateTime(booking.createdAt) : 'just now'}
-                  </span>
-                  {booking.cancelledAt ? (
-                    <span>Cancelled {formatDateTime(booking.cancelledAt)}</span>
-                  ) : null}
+                <div className="booking-actions">
                   {booking.status === 'Active' ? (
                     <button
                       className="text-button"
